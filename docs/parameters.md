@@ -22,10 +22,11 @@ Every field you can pass to `POST /createTask` for this task type.
 
 | Field | Type | Required | Notes |
 |-------|------|:--------:|-------|
-| `type` | `string` | yes | FunCaptchaTaskProxyLess or FunCaptchaTask |
-| `websiteURL` | `string` | yes | Full URL of the page |
-| `websiteKey` | `string` | yes | The FunCaptcha public key (UUID format). Found in the FunCaptcha init call. |
-| `subdomain` | `string` | no | Optional custom API subdomain if the site uses one |
+| `type` | `string` | yes | `FunCaptchaTaskProxyLess` (we supply the IP) or `FunCaptchaTask` (you supply the IP — fields below) |
+| `websiteURL` | `string` | yes | Full URL of the page that loads the FunCaptcha widget. |
+| `websiteKey` | `string` | yes | Arkose public key (UUID format). Open DevTools → Network on the target page, look for the Arkose api.js URL — it's `https://<subdomain>.arkoselabs.com/v2/<your-pkey>/api.js`. The 36-character UUID in the path **is** the public key. |
+| `funcaptchaApiJSSubdomain` | `string` | recommended | The subdomain that hosts Arkose's `api.js` for your target site. Find it in the api.js URL on the target page: `https://<subdomain>.arkoselabs.com/v2/<your-pkey>/api.js` — pass the `<subdomain>.arkoselabs.com` part. Defaults to `client-api.arkoselabs.com` if omitted, but most production deployments use a different subdomain so set this explicitly. |
+| `data` | `string` | conditional | Session-scoped blob the target site's frontend generates and passes to `Arkose.setConfig({ data: { blob: ... } })`. **Required by most production Arkose deployments** — without it, the challenge always fails regardless of how well we solve it. We can't generate this (it's signed against the customer's authentic session + a tenant-specific Arkose key). See [`docs/blob-extraction.md`](blob-extraction.md) for the step-by-step DevTools capture guide. Pass as a plain string. |
 
 
 ### Proxy fields (only for `FunCaptchaTask`)
@@ -99,6 +100,7 @@ stable machine-readable identifier. Common codes:
 - `ERROR_RATE_LIMITED` — too many createTask calls per second
 - `ERROR_TIMEOUT` — solve took longer than the cap (auto-refunded)
 - `ERROR_CAPTCHA_UNSOLVABLE` — solver gave up (auto-refunded)
+- `ERROR_FUNCAPTCHA_PARAMS_MISSING` — Arkose iframe never bound. The error description tells you which param is most likely missing — usually the `data` blob, or the wrong `funcaptchaApiJSSubdomain`. Refunded.
 
 ## Naming conventions
 

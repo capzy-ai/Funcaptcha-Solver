@@ -30,8 +30,12 @@ def solve() -> dict:
             "clientKey": CAPZY_KEY,
             "task": {
                 "type": "FunCaptchaTaskProxyLess",
-                "websiteURL": "https://example.com",
-                "websiteKey": "69A21A01-CC7B-B9C6-0F9A-E7FA06677FFC"
+                "websiteURL": "https://example.com/signup",
+                "websiteKey": "<YOUR-PUBLIC-KEY>",
+                # The two values below are extracted from DevTools on
+                # YOUR target page — see docs/blob-extraction.md.
+                "funcaptchaApiJSSubdomain": "<your-subdomain>.arkoselabs.com",
+                "data": "<blob-captured-from-target-site>",
             },
         },
         timeout=15,

@@ -71,13 +71,22 @@ import requests, time
 
 KEY = "capzy_xxxxxxxxxxxxxxxxxxxxxxxx"
 
-# 1) Create the task
+# 1) Create the task. Most production sites require both the api.js
+#    subdomain AND a session-scoped `data` blob captured from your
+#    authentic browser session — see docs/blob-extraction.md for the
+#    step-by-step DevTools walkthrough.
 created = requests.post("https://api.capzy.ai/createTask", json={
     "clientKey": KEY,
     "task": {
         "type": "FunCaptchaTaskProxyLess",
-        "websiteURL": "https://example.com",
-        "websiteKey": "69A21A01-CC7B-B9C6-0F9A-E7FA06677FFC"
+        "websiteURL": "https://example.com/signup",
+        "websiteKey": "<YOUR-PUBLIC-KEY>",
+        # The subdomain that hosts api.js on YOUR target page. Find it
+        # in the script URL: https://<this-part>.arkoselabs.com/v2/<pkey>/api.js
+        "funcaptchaApiJSSubdomain": "<your-subdomain>.arkoselabs.com",
+        # The blob from the target site's setupEnforcement callback.
+        # Required by most production Arkose deployments.
+        "data": "<blob-from-target-site>",
     },
 }).json()
 task_id = created["taskId"]
@@ -114,25 +123,28 @@ See [`examples/README.md`](examples/README.md) for setup details.
   "clientKey": "capzy_xxxxxxxxxxxxxxxxxxxxxxxx",
   "task": {
     "type": "FunCaptchaTaskProxyLess",
-    "websiteURL": "https://example.com",
-    "websiteKey": "69A21A01-CC7B-B9C6-0F9A-E7FA06677FFC"
+    "websiteURL": "https://example.com/signup",
+    "websiteKey": "<YOUR-PUBLIC-KEY>",
+    "funcaptchaApiJSSubdomain": "<your-subdomain>.arkoselabs.com",
+    "data": "<blob-from-target-site>"
   }
 }
 ```
 
 | Field | Type | Required | Notes |
 |-------|------|:--------:|-------|
-| `type` | `string` | yes | FunCaptchaTaskProxyLess or FunCaptchaTask |
-| `websiteURL` | `string` | yes | Full URL of the page |
-| `websiteKey` | `string` | yes | The FunCaptcha public key (UUID format). Found in the FunCaptcha init call. |
-| `subdomain` | `string` | no | Optional custom API subdomain if the site uses one |
-| `proxyType` | `string` | no  | http | https | socks4 | socks5 (only for `FunCaptchaTask`) |
+| `type` | `string` | yes | `FunCaptchaTaskProxyLess` (we supply the IP) or `FunCaptchaTask` (you supply it) |
+| `websiteURL` | `string` | yes | Full URL of the page that loads the FunCaptcha widget |
+| `websiteKey` | `string` | yes | Arkose public key (UUID). Find it in the api.js URL on the target page: `https://<subdomain>.arkoselabs.com/v2/<your-pkey>/api.js`. |
+| `funcaptchaApiJSSubdomain` | `string` | recommended | The subdomain that hosts Arkose's `api.js` for your target. Find it the same way as the public key — in the api.js URL. Defaults to `client-api.arkoselabs.com` if omitted; most production sites use a different subdomain so set this explicitly. |
+| `data` | `string` | **conditional** | Session-scoped blob the target site's frontend generates. Required by most production Arkose deployments. We can't generate this — capture it from your authentic browser session. See [`docs/blob-extraction.md`](docs/blob-extraction.md) for the step-by-step. |
+| `proxyType` | `string` | no  | `http` / `https` / `socks4` / `socks5` (only for `FunCaptchaTask`) |
 | `proxyAddress` | `string` | no  | IP or hostname of your proxy (only for `FunCaptchaTask`) |
 | `proxyPort` | `integer` | no  | Port number of your proxy (only for `FunCaptchaTask`) |
-| `proxyLogin` | `string` | no  | Optional — omit if your proxy doesn't require auth (only for `FunCaptchaTask`) |
-| `proxyPassword` | `string` | no  | Optional — omit if your proxy doesn't require auth (only for `FunCaptchaTask`) |
+| `proxyLogin` | `string` | no  | Omit if your proxy doesn't require auth (only for `FunCaptchaTask`) |
+| `proxyPassword` | `string` | no  | Omit if your proxy doesn't require auth (only for `FunCaptchaTask`) |
 
-Full reference in [`docs/parameters.md`](docs/parameters.md).
+Full reference in [`docs/parameters.md`](docs/parameters.md). Blob extraction walkthrough in [`docs/blob-extraction.md`](docs/blob-extraction.md).
 
 ## Response shape
 
@@ -149,14 +161,16 @@ Submit the token as the FunCaptcha response field on the target site's form or A
 ## Features
 
 - Rotation, matching, and selection puzzles
-- Supports custom API subdomains for white-labeled deployments
+- Customer-supplied subdomain + blob for full per-site control
 - High accuracy on standard challenge types
 
 ## FAQ
 
-**Where do I find the public key?** Search the page source for `publicKey`, `data-pkey`, or network requests to arkoselabs.com / funcaptcha.com. The key is in UUID format.
+**Where do I find the public key?** Open DevTools → Network on the target page and look for the Arkose `api.js` request — its URL is `https://<subdomain>.arkoselabs.com/v2/<your-pkey>/api.js`. The 36-char UUID in the path is the public key. You can also grep the page source for `publicKey:` or `data-pkey=`.
 
-**The site passes a `blob` or `data` parameter — do I need it?** Yes — if you see a `data` or `blob` in the FunCaptcha init call, include it as the `subdomain`-adjacent param. Open an issue if you need explicit blob support.
+**Do I need the `data` blob?** Most production Arkose deployments require it. If your first solve returns `ERROR_FUNCAPTCHA_PARAMS_MISSING`, the blob is almost always why. We can't mint the blob — only your authentic browser session can. See [`docs/blob-extraction.md`](docs/blob-extraction.md) for the capture walkthrough.
+
+**Do I need `funcaptchaApiJSSubdomain`?** Yes for almost all production sites. Find it in the api.js script URL on the target page — pass the `<subdomain>.arkoselabs.com` part. The default `client-api.arkoselabs.com` works for a minority of deployments.
 
 ## What you'll need
 

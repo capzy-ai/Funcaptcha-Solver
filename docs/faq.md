@@ -58,9 +58,15 @@ This repo is the SDK-free path for everyone else.
 
 ## Captcha-specific questions
 
-**Where do I find the public key?** Search the page source for `publicKey`, `data-pkey`, or network requests to arkoselabs.com / funcaptcha.com. The key is in UUID format.
+**Where do I find the public key?** Open DevTools → Network on the target page and look for the Arkose `api.js` request — its URL is `https://<subdomain>.arkoselabs.com/v2/<your-pkey>/api.js`. The 36-char UUID in the path is the public key. You can also grep the page source for `publicKey:` or `data-pkey=`.
 
-**The site passes a `blob` or `data` parameter — do I need it?** Yes — if you see a `data` or `blob` in the FunCaptcha init call, include it as the `subdomain`-adjacent param. Open an issue if you need explicit blob support.
+**Do I need the `data` blob?** Most production Arkose deployments require it. If your first solve returns `ERROR_FUNCAPTCHA_PARAMS_MISSING`, the blob is almost always why. We can't mint it — only your authentic browser session on the target site can. See [`docs/blob-extraction.md`](blob-extraction.md) for the step-by-step DevTools capture walkthrough.
+
+**Do I need `funcaptchaApiJSSubdomain`?** Yes for almost all production sites. Find it in the api.js script URL on the target page — pass the `<subdomain>.arkoselabs.com` part. The default `client-api.arkoselabs.com` only works for a minority of deployments.
+
+**Why did my solve return `ERROR_FUNCAPTCHA_PARAMS_MISSING`?** Means the Arkose iframe never bound. The error description tells you which param is most likely missing — usually the `data` blob or the wrong `funcaptchaApiJSSubdomain`. Auto-refunded.
+
+**How fresh does the blob need to be?** The blob is regenerated on every page load and expires the moment the captcha iframe binds on the target page. Capture it BEFORE the iframe loads and submit your `createTask` call within ~30 seconds.
 
 ## Operational
 

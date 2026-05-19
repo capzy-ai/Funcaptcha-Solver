@@ -16,12 +16,16 @@ set -euo pipefail
 API_BASE="${API_BASE:-https://api.capzy.ai}"
 : "${CAPZY_KEY:?set CAPZY_KEY in your env (grab one at https://capzy.ai/auth/register)}"
 
-# Customize the task body to match the target site you're solving.
+# Replace the placeholder values with what you captured from the target
+# page (DevTools → Network on the Arkose api.js + gt2 requests). See
+# docs/blob-extraction.md for the step-by-step.
 TASK=$(cat <<'JSON'
 {
     "type": "FunCaptchaTaskProxyLess",
-    "websiteURL": "https://example.com",
-    "websiteKey": "69A21A01-CC7B-B9C6-0F9A-E7FA06677FFC"
+    "websiteURL": "https://example.com/signup",
+    "websiteKey": "<YOUR-PUBLIC-KEY>",
+    "funcaptchaApiJSSubdomain": "<your-subdomain>.arkoselabs.com",
+    "data": "<blob-captured-from-target-site>"
 }
 JSON
 )

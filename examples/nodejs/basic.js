@@ -24,13 +24,17 @@ async function postJson(path, body) {
 }
 
 async function solve() {
-  // 1) Create the task.
+  // 1) Create the task. Both `funcaptchaApiJSSubdomain` and `data` are
+  //    captured from DevTools on the target page — see
+  //    docs/blob-extraction.md for the step-by-step.
   const created = await postJson("/createTask", {
     clientKey: CAPZY_KEY,
     task: {
-      "type": "FunCaptchaTaskProxyLess",
-      "websiteURL": "https://example.com",
-      "websiteKey": "69A21A01-CC7B-B9C6-0F9A-E7FA06677FFC"
+      type: "FunCaptchaTaskProxyLess",
+      websiteURL: "https://example.com/signup",
+      websiteKey: "<YOUR-PUBLIC-KEY>",
+      funcaptchaApiJSSubdomain: "<your-subdomain>.arkoselabs.com",
+      data: "<blob-captured-from-target-site>",
     },
   });
   if (created.errorId) {
