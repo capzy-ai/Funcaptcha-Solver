@@ -154,6 +154,17 @@ When the task is ready (`status: "ready"`), `solution` contains:
 |-------|------|-------|
 | `token` | `string` | The FunCaptcha token. Submit on the target site exactly where FunCaptcha expects it. |
 
+### Example
+
+```json
+{
+  "status": "ready",
+  "solution": {
+    "token": "5e98aaef3c70d7e7f.7732870915|r=us-west-2|metabgclr=transparent|..."
+  }
+}
+```
+
 ### How to use the result
 
 Submit the token as the FunCaptcha response field on the target site's form or API.
